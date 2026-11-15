@@ -34,6 +34,9 @@
     $('#sheets').appendChild(wrap);
     const sheet = $('.sheet', wrap), back = $('.backdrop', wrap);
     const api = { el: wrap, sheet, body: $('.sheet-body', wrap), full, close: (pop) => closeSheet(api, pop) };
+    const t0 = performance.now();
+    /* тап по затемнённому фону закрывает окно (игнорируем «хвост» тапа, которым оно было открыто) */
+    back.addEventListener('click', (e) => { if (e.target === back && performance.now() - t0 > 280) api.close(); });
     stack.push(api);
     history.pushState({ r: stack.length }, '');
     document.body.classList.add('sheet-open');
@@ -1251,6 +1254,22 @@
   }
   R.shareYear = shareYear;
 
+  /* бар и «+» показываем только когда геометрия окна устоялась (в iOS PWA safe-area/viewport
+     уточняются уже после первого кадра — без этого бар «прыгает» на старте) */
+  function settleChrome() {
+    const reveal = () => {
+      const nav = $('#nav'), fab = $('#fab');
+      document.body.classList.remove('booting');
+      const t = R.tl().add(nav, [{ opacity: 0, transform: 'translate(-50%, 36px) scale(.96)' }, { opacity: 1, transform: 'translate(-50%, 0) scale(1)' }], { sp: 'soft' });
+      if (!fab.classList.contains('hide')) t.add(fab, [{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'scale(1)' }], { at: '<140', sp: 'bouncy' });
+    };
+    let done = false;
+    const go = () => { if (done) return; done = true; requestAnimationFrame(() => requestAnimationFrame(reveal)); };
+    const ready = () => setTimeout(go, 140);
+    if (document.readyState === 'complete') ready(); else window.addEventListener('load', ready, { once: true });
+    setTimeout(go, 1200); /* страховка */
+  }
+
   /* ================= старт ================= */
   function boot() {
     buildNav();
@@ -1262,6 +1281,7 @@
     setInterval(checkReminder, 30000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkReminder(); if (!stack.length && cur === 'habits') render({ quiet: true }); } });
     checkReminder();
+    settleChrome();
     if (S().settings.onboard && !S().habits.length) setTimeout(() => openTemplates({ onboard: true }), 650);
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
   }
