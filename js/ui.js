@@ -851,7 +851,8 @@
     const orig = en ? R.mediaIds(en) : [];
     const fresh = [];
     let saved = false, rec = null, recT = 0, recTick = null;
-    const all = [...new Set([...R.TAGS, ...S().entries.flatMap((x) => x.tags || [])])];
+    const mine = () => S().settings.tags || (S().settings.tags = []);
+    const all = [...new Set([...R.TAGS, ...mine(), ...S().entries.flatMap((x) => x.tags || [])])];
     const body = () => `<div class="dayhead"><h2>${edit ? T('Запись') : T('Как ты сегодня?')}</h2></div>
       <div class="moodbox" id="mb" style="--mc:${R.moodColor(d.mood)}"><div class="mnum" id="mn">${d.mood}</div>
         <input type="range" id="mr" min="1" max="10" step="1" value="${d.mood}" aria-label="${T('Оценка настроения от 1 до 10')}"><div class="mscale"><span>${T('Плохо')}</span><span>${T('Отлично')}</span></div></div>
@@ -862,7 +863,8 @@
         ${d.voice.map((v, i) => `<div class="vrow"><audio controls preload="metadata" data-mid="${v.id}" aria-label="${T('Голосовая запись')} ${i + 1}"></audio><button type="button" class="rbtn sm" data-rmv="${i}" aria-label="${T('Удалить запись')}">${ic('trash', 16)}</button></div>`).join('')}
         <div class="row2 tight"><button type="button" class="btn" data-x="photo">${ic('image', 18)}${T('Фото')}</button><button type="button" class="btn recbtn ${rec ? 'on' : ''}" data-x="rec" aria-pressed="${!!rec}">${rec ? ic('stop', 18) + T('Стоп') + ' <span id="rt" class="tnum">0:00</span>' : ic('mic', 18) + T('Голос')}</button></div>
         <input type="file" id="pf" accept="image/*" multiple hidden></div>
-      <div class="fl"><span>${T('Теги')}</span><div class="chs" id="tg">${all.map((t) => `<button type="button" class="chip ${d.tags.includes(t) ? 'on' : ''}" data-t="${esc(t)}" aria-pressed="${d.tags.includes(t)}">${esc(T(t))}</button>`).join('')}</div>
+      <div class="fl"><span>${T('Теги')}</span><div class="chs" id="tg">${all.map((t) => { const chip = `<button type="button" class="chip ${d.tags.includes(t) ? 'on' : ''}" data-t="${esc(t)}" aria-pressed="${d.tags.includes(t)}">${esc(T(t))}</button>`; return mine().includes(t) ? `<span class="tgw">${chip}<button type="button" class="tagx" data-rmtag="${esc(t)}" aria-label="${T('Удалить тег')}: ${esc(t)}">${ic('x', 12, 2.8)}</button></span>` : chip; }).join('')}</div>
+        <small class="muted">${T('Свои теги сохраняются и всегда будут под рукой.')}</small>
         <div class="addtag"><input id="nt" type="text" maxlength="18" placeholder="${T('Свой тег')}" aria-label="${T('Свой тег')}"><button type="button" class="chip" data-addtag>${ic('plus', 14)}${T('Добавить')}</button></div></div>
       <div class="row2">${edit ? `<button type="button" class="btn danger" data-x="del">${ic('trash', 18)}${T('Удалить')}</button>` : '<span></span>'}<button type="button" class="btn primary" data-x="save">${T('Сохранить')}</button></div>`;
     const a = openSheet({
@@ -921,7 +923,7 @@
           }
           redo();
         });
-        const addTag = () => { const i = $('#nt', a.body), v = i.value.trim(); if (!v) return; sync(); if (!d.tags.includes(v)) d.tags.push(v); if (!all.includes(v)) all.push(v); redo(); };
+        const addTag = () => { const i = $('#nt', a.body), v = i.value.trim(); if (!v) return; sync(); if (!d.tags.includes(v)) d.tags.push(v); if (!all.includes(v)) all.push(v); if (!R.TAGS.includes(v) && !mine().includes(v)) { mine().push(v); R.save(); } redo(); };
         a.body.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'nt') { e.preventDefault(); addTag(); } });
         a.body.addEventListener('click', (e) => {
           const im = e.target.closest('img[data-vi]');
@@ -929,6 +931,7 @@
           const t = e.target.closest('button'); if (!t) return;
           if (t.dataset.rmp != null) { sync(); d.photos.splice(+t.dataset.rmp, 1); return redo(); }
           if (t.dataset.rmv != null) { sync(); d.voice.splice(+t.dataset.rmv, 1); return redo(); }
+          if (t.dataset.rmtag != null) { sync(); const v = t.dataset.rmtag, s = mine(); s.splice(s.indexOf(v), 1); d.tags = d.tags.filter((x) => x !== v); if (!S().entries.some((x) => (x.tags || []).includes(v))) all.splice(all.indexOf(v), 1); R.save(); R.haptic(8); return redo(); }
           if (t.dataset.t != null) { sync(); const i = d.tags.indexOf(t.dataset.t); if (i >= 0) d.tags.splice(i, 1); else d.tags.push(t.dataset.t); t.classList.toggle('on'); t.setAttribute('aria-pressed', i < 0); R.anim(t, [{ transform: 'scale(.92)' }, { transform: 'scale(1)' }], { sp: 'bouncy', fill: 'none' }); R.haptic(8); return; }
           if (t.hasAttribute('data-addtag')) return addTag();
           if (t.dataset.x === 'photo') return $('#pf', a.body).click();

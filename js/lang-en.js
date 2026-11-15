@@ -311,6 +311,8 @@
     'серия считается в неделях': 'streak counted in weeks',
     'среднее время отметки': 'average check-in time',
     'стак.': 'glasses',
+    'Удалить тег': 'Remove tag',
+    'Свои теги сохраняются и всегда будут под рукой.': 'Your own tags are saved and always at hand.',
     'Утренняя зарядка': 'Morning workout',
     'Прогулка 30 минут': '30-minute walk',
     'Медитация': 'Meditation',
