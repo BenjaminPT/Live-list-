@@ -1274,7 +1274,8 @@
         gap = Math.round(screen.height - pr.getBoundingClientRect().bottom);
         pr.remove();
       }
-      document.documentElement.style.setProperty('--vgap', (gap > 4 && gap < 140 ? gap : 0) + 'px');
+      /* окно короче экрана: нижней безопасной зоны внутри него нет, бар — у самого края видимой области */
+      if (gap > 4 && gap < 140) document.documentElement.style.setProperty('--nb', '10px'); else document.documentElement.style.removeProperty('--nb');
     };
     fit();
     addEventListener('resize', fit); addEventListener('orientationchange', () => setTimeout(fit, 300));
