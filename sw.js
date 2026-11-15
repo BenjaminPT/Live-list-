@@ -1,8 +1,8 @@
 /* Ritual — service worker: офлайн-кэш оболочки приложения */
-const VERSION = 'ritual-v2';
+const VERSION = 'ritual-v3';
 const SHELL = [
   './', 'index.html', 'manifest.json', 'css/style.css',
-  'js/i18n.js', 'js/lang-en.js', 'js/icons.js', 'js/anim.js', 'js/store.js', 'js/charts.js', 'js/ui.js',
+  'js/i18n.js', 'js/lang-en.js', 'js/icons.js', 'js/anim.js', 'js/store.js', 'js/charts.js', 'js/year.js', 'js/ui.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'
 ];
 

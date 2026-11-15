@@ -363,3 +363,69 @@ input:focus, textarea:focus, select:focus { border-color: rgb(var(--tint) / .4);
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* ---------- шаблоны привычек ---------- */
+.tplgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 8px; }
+.tpl {
+  --h: 350; position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px; min-height: 108px; text-align: left; border-radius: 22px;
+  background: var(--s1); border: 1.5px solid var(--line); transition: background .25s, border-color .25s, transform .25s;
+}
+.tpl .ti { width: 40px; height: 40px; border-radius: 14px; display: grid; place-items: center; margin-bottom: 4px; color: hsl(var(--h) 90% var(--il)); background: hsl(var(--h) 60% 50% / .16); }
+.tpl b { font-size: 15px; line-height: 1.2; }
+.tpl small { color: var(--muted); font-size: 12px; }
+.tpl .tk { position: absolute; top: 12px; right: 12px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--line); color: transparent; transition: all .25s; }
+.tpl.on { border-color: hsl(var(--h) 85% 58%); background: hsl(var(--h) 60% 50% / .12); }
+.tpl.on .tk { background: hsl(var(--h) 85% 58%); border-color: transparent; color: #fff; }
+.tpl:disabled { opacity: .5; cursor: default; }
+.tplfoot { position: sticky; bottom: calc(-26px - var(--sb)); margin: 8px -18px 0; padding: 12px 18px calc(18px + var(--sb)); background: linear-gradient(180deg, transparent, var(--sheet-full) 28%); }
+.tplfoot .btn.wide { margin-top: 0; }
+.btn:disabled { opacity: .45; }
+.tplalt { display: flex; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.tplchip { margin: 0 0 4px; }
+.chip.on { background: var(--text); color: var(--bg); }
+.empty .btn { margin-top: 6px; }
+.lk.yl { width: 100%; margin-bottom: 12px; }
+.lk.yl > svg:last-child { color: var(--muted); }
+
+/* ---------- Ваш год в привычках ---------- */
+@property --sh { syntax: '<number>'; inherits: true; initial-value: 350; }
+.story { --sh: 350; position: relative; display: flex; flex-direction: column; min-height: calc(94dvh - 70px); margin: 0 -18px; padding: 0 18px; transition: --sh .7s ease;
+  background: radial-gradient(120% 60% at 50% 0%, hsl(var(--sh) 70% 50% / .28), transparent 70%); }
+.sbars { display: flex; gap: 4px; padding: 4px 56px 0 0; }
+.sbars i { flex: 1; height: 4px; border-radius: 2px; background: rgb(var(--tint) / .16); transition: background .4s; }
+.sbars i.on { background: hsl(var(--sh) 85% 62%); }
+.sx { position: absolute; top: -8px; right: 14px; width: 40px; height: 40px; }
+.sstage { flex: 1; display: flex; touch-action: pan-y; }
+.slide { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 14px; padding: 20px 6px 96px; min-width: 0; }
+.sl-eyebrow { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: hsl(var(--sh) 85% var(--il)); font-weight: 700; }
+.sl-year { font-size: 84px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.sl-big { font-size: 96px; font-weight: 800; line-height: 1; letter-spacing: -.04em; color: hsl(var(--sh) 92% var(--bigl)); font-variant-numeric: tabular-nums; }
+.sl-title { font-size: 26px; font-weight: 800; line-height: 1.15; text-wrap: balance; }
+.sl-title.big { font-size: 40px; }
+.sl-sub { color: var(--muted); font-size: 15px; text-wrap: balance; }
+.sl-ico { width: 72px; height: 72px; border-radius: 24px; display: grid; place-items: center; color: hsl(var(--sh) 90% var(--il)); background: hsl(var(--sh) 60% 50% / .18); }
+.sl-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; justify-items: center; font-size: 15px; color: var(--soft); }
+.sl-list li { display: flex; align-items: center; gap: 8px; }
+.sl-list b { color: var(--text); }
+.sl-years { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+.sl-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.sl-tags span { padding: 6px 12px; border-radius: 999px; background: var(--s2); font-size: 13px; }
+.sl-ach { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.sl-ach span { width: 46px; height: 46px; border-radius: 16px; display: grid; place-items: center; background: hsl(var(--sh) 60% 50% / .18); color: hsl(var(--sh) 90% var(--il)); }
+.sl-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+.sl-stats b { display: block; font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.sl-stats small { color: var(--muted); font-size: 12px; }
+.yheat { --h: 350; width: 100%; display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; }
+.yheat .cell { border-radius: 2px; }
+.yheat.go .cell, .slide.go .yheat .cell { animation: cellpop .5s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(var(--c) * 12ms); }
+@keyframes cellpop { from { opacity: 0; transform: scale(.2); } }
+.mbars { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); grid-auto-flow: column; gap: 5px; width: 100%; align-items: end; height: 120px; }
+.mb { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; height: 100%; min-width: 0; }
+.mb i { display: block; width: 100%; min-height: 3px; height: calc(var(--w) * .78); border-radius: 5px 5px 2px 2px; background: hsl(var(--sh) 85% 60%); transform-origin: bottom; }
+.slide.go .mb i { animation: growy .75s cubic-bezier(.2, .8, .2, 1) backwards; animation-delay: calc(var(--d) + 150ms); }
+@keyframes growy { from { transform: scaleY(0); } }
+.mb span { font-size: 11px; color: var(--muted); }
+.snav { position: absolute; bottom: 18px; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--s2); border: 1px solid var(--line); }
+.snav.prev { left: 18px; } .snav.next { right: 18px; }
+.snav:disabled { opacity: .3; }
+.slide .btn { max-width: 320px; }

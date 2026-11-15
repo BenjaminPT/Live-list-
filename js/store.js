@@ -32,6 +32,42 @@
   R.HUES = [350, 28, 48, 150, 185, 215, 255, 290];
   R.TAGS = [L('Прогулка'), L('Природа'), L('Друзья'), L('Семья'), L('Работа'), L('Спорт'), L('Дом'), L('Отдых'), L('Учёба'), L('Творчество'), L('Рефлексия'), L('Одиночество')];
 
+  /* ---------- шаблоны привычек ---------- */
+  R.TEMPLATES = [
+    { k: 'water', name: L('Выпить воды'), icon: 'drop', hue: 215, type: 'count', target: 8, unit: L('стак.'), core: true },
+    { k: 'morning', name: L('Утренняя зарядка'), icon: 'sun', hue: 48, type: 'check' },
+    { k: 'train', name: L('Тренировка'), icon: 'dumbbell', hue: 150, type: 'check', days: [0, 2, 4] },
+    { k: 'walk', name: L('Прогулка 30 минут'), icon: 'walk', hue: 28, type: 'check' },
+    { k: 'read', name: L('Чтение'), icon: 'leaf', hue: 290, type: 'check', perWeek: 5 },
+    { k: 'meditate', name: L('Медитация'), icon: 'spark', hue: 255, type: 'check' },
+    { k: 'sleep', name: L('Сон до 23:00'), icon: 'moon', hue: 255, type: 'check' },
+    { k: 'journal', name: L('Журнал'), icon: 'book', hue: 350, type: 'check', core: true, auto: 'journal' },
+    { k: 'stretch', name: L('Растяжка'), icon: 'bolt', hue: 48, type: 'check', days: [1, 3, 5] },
+    { k: 'vitamins', name: L('Витамины'), icon: 'apple', hue: 150, type: 'check' },
+    { k: 'language', name: L('Изучение языка'), icon: 'star', hue: 185, type: 'check', perWeek: 5 },
+    { k: 'gratitude', name: L('Три благодарности'), icon: 'heart', hue: 350, type: 'check' },
+    { k: 'nosocial', name: L('Без соцсетей'), icon: 'phone', hue: 185, type: 'avoid' },
+    { k: 'nosugar', name: L('Без сладкого'), icon: 'apple', hue: 28, type: 'avoid' },
+    { k: 'nocaffeine', name: L('Кофе только до 14:00'), icon: 'coffee', hue: 28, type: 'avoid' }
+  ];
+  /* создаёт привычки из шаблонов на языке интерфейса */
+  R.addFromTemplates = (keys) => {
+    const out = [];
+    keys.forEach((k) => {
+      const t = R.TEMPLATES.find((x) => x.k === k);
+      if (!t) return;
+      const h = {
+        id: R.uid(), name: R.t(t.name), icon: t.icon, hue: t.hue, type: t.type, target: t.target || 1, unit: t.unit ? R.t(t.unit) : '',
+        perWeek: t.perWeek || 7, days: t.days ? [...t.days] : null, core: !!t.core, auto: t.auto || null, goal: null, tpl: t.k,
+        created: R.dkey(R.today()), order: R.state.habits.length
+      };
+      R.state.habits.push(h); out.push(h);
+    });
+    R.state.settings.onboard = false;
+    R.save();
+    return out;
+  };
+
   /* ---------- тема ---------- */
   const lightMq = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : { matches: false };
   R.light = false;
@@ -56,7 +92,7 @@
     };
   }
 
-  const DEF_SETTINGS = () => ({ name: '', demo: false, haptics: true, remind: '', lang: 'auto', theme: 'dark' });
+  const DEF_SETTINGS = () => ({ name: '', demo: false, haptics: true, remind: '', lang: 'auto', theme: 'dark', onboard: false });
   R.emptyState = () => ({ v: 2, habits: [], logs: {}, entries: [], heavy: {}, reviews: {}, ach: null, settings: DEF_SETTINGS() });
 
   function seedDemo() {
@@ -142,7 +178,7 @@
     } catch (e) {}
     return null;
   }
-  R.state = load() || seedDemo();
+  R.state = load() || (() => { const e = R.emptyState(); e.settings.onboard = true; return e; })();
   R.setLang(R.state.settings.lang);
   R.applyTheme();
 
@@ -449,7 +485,7 @@
     return {
       total, early, maxL, care, goal, perfect, entries: es.length, jlong: R.entryLongest(),
       photo: es.some((e) => e.photos && e.photos.length), voice: es.some((e) => e.voice && e.voice.length),
-      mood10: es.some((e) => e.mood === 10), reviews: Object.keys(st.reviews).length, created: st.habits.length
+      mood10: es.some((e) => e.mood === 10), reviews: Object.keys(st.reviews).filter((k) => k[0] !== 'y').length, created: st.habits.length
     };
   };
   R.ACH = [

@@ -190,15 +190,16 @@
     const dn = dueList.filter((h) => R.isDone(h, tk)).length;
     const sorted = [...all.filter((h) => dueList.includes(h)), ...all.filter((h) => !dueList.includes(h))];
     const nm = S().settings.name;
-    const rd = reviewDue();
+    const rd = reviewDue(), yb = R.yearBanner();
     return `<header class="top"><div><p class="eyebrow">${dayLabel()}</p><h1>${greet()}${nm ? ', ' + esc(nm) : ''}</h1></div><div id="ringbox">${ring(dn, dueList.length)}</div></header>
       <div class="chips-row">
         <button type="button" class="chip ${heavy ? 'on' : ''}" data-act="heavy" aria-pressed="${heavy}">${ic('snow', 16)}${T('Тяжёлый день')}</button>
         ${S().settings.demo ? `<button type="button" class="chip ghost" data-act="cleardemo">${T('Демо-данные · начать с нуля')}</button>` : ''}
       </div>
       ${rd != null ? `<button type="button" class="banner" data-act="review" data-off="${rd}"><span class="bi">${ic('chart', 20)}</span><span><b>${T('Итоги недели готовы')}</b><small>${T('Посмотрите, как прошла неделя')}</small></span>${ic('chevR', 18)}</button>` : ''}
+      ${yb != null ? `<button type="button" class="banner year" data-act="year" data-y="${yb}"><span class="bi">${ic('spark', 20)}</span><span><b>${T('Ваш {y} в привычках', { y: yb })}</b><small>${T('Итоги года готовы')}</small></span>${ic('chevR', 18)}</button>` : ''}
       ${heavy ? `<p class="note">${T('Режим тяжёлого дня: остались только главные привычки, остальные не прервут серии.')}</p>` : ''}
-      ${sorted.length ? `<section class="grid" id="grid">${sorted.map(cardHTML).join('')}</section>` : `<div class="empty">${ic('spark', 34)}<p>${T('Пока нет привычек. Нажмите «+», чтобы создать первую.')}</p></div>`}`;
+      ${sorted.length ? `<section class="grid" id="grid">${sorted.map(cardHTML).join('')}</section>` : `<div class="empty">${ic('spark', 34)}<p>${T('Пока нет привычек. Нажмите «+», чтобы создать первую.')}</p><button type="button" class="btn primary" data-act="tpl">${ic('spark', 18)}${T('Выбрать из шаблонов')}</button></div>`}`;
   }
 
   /* ---------- дневник ---------- */
@@ -336,6 +337,7 @@
         <button type="button" class="lk" data-act="review" data-off="${A.p === 'week' ? Math.min(0, A.off) : -1}"><span class="bi">${ic('chart', 18)}</span><span><b>${T('Итоги недели')}</b><small>${T('Обзор и фокус')}</small></span></button>
         <button type="button" class="lk" data-act="ach"><span class="bi gold">${ic('award', 18)}</span><span><b>${T('Достижения')}</b><small>${ach} / ${R.ACH.length}</small></span></button>
       </div>
+      <button type="button" class="lk yl" data-act="year" data-y="${R.today().getFullYear()}"><span class="bi">${ic('spark', 18)}</span><span><b>${T('Ваш год в привычках')}</b><small>${T('История года: ритм, серии, настроение')}</small></span>${ic('chevR', 16)}</button>
       <div class="rchips" id="rchips">${chips.join('')}</div>
       <section class="panel"><h3>${T('Настроение по времени')}</h3><div id="chartbox">${R.moodChart(pts, n, labels)}</div>${pts.length ? '' : `<p class="muted center">${T('За этот период записей нет')}</p>`}</section>
       <section class="tiles">
@@ -490,7 +492,9 @@
           if (S().heavy[k]) delete S().heavy[k]; else S().heavy[k] = true;
           R.save(); R.haptic(14); render(); done(S().heavy[k] ? T('Тяжёлый день: сегодня только главное') : T('Обычный режим')); return;
         }
-        if (a === 'cleardemo') { if (confirm(T('Удалить демо-данные и начать с чистого листа?'))) { R.wipeAll().then(() => render()); } return; }
+        if (a === 'cleardemo') { if (confirm(T('Удалить демо-данные и начать с чистого листа?'))) { R.wipeAll().then(() => { render(); setTimeout(() => openTemplates({}), 350); }); } return; }
+        if (a === 'tpl') return openTemplates({});
+        if (a === 'year') return openYear(+act.dataset.y);
         if (a === 'install' && deferredInstall) { deferredInstall.prompt(); deferredInstall.userChoice.finally(() => { deferredInstall = null; render({ quiet: true }); }); return; }
         if (a === 'export') return exportData();
         if (a === 'import') return $('#imp').click();
@@ -749,6 +753,7 @@
     const body = () => {
       const tyHint = { check: T('Сделал — отметил.'), count: T('Например, 8 стаканов воды: считаем по нажатиям.'), avoid: T('Каждый день засчитывается сам, пока вы не отметите срыв.') }[d.type];
       return `<div class="dayhead"><h2>${edit ? T('Редактировать') : T('Новая привычка')}</h2></div>
+      ${edit ? '' : `<button type="button" class="chip tplchip" data-x="tpl">${ic('spark', 16)}${T('Выбрать из шаблонов')}</button>`}
       <label class="fl">${T('Название')}<input id="hn" type="text" maxlength="32" value="${esc(d.name)}" placeholder="${T('Например, Утренняя зарядка')}" autocomplete="off"><small class="err" id="her" role="alert"></small></label>
       <div class="fl"><span>${T('Тип')}</span><div class="seg" role="radiogroup">${[['check', T('Отметка')], ['count', T('Счётчик')], ['avoid', T('Воздержание')]].map(([v, t]) => `<button type="button" role="radio" aria-checked="${d.type === v}" class="${d.type === v ? 'on' : ''}" data-ty="${v}">${t}</button>`).join('')}</div><small class="muted">${tyHint}</small></div>
       ${d.type === 'count' ? `<div class="row2"><label class="fl">${T('Цель в день')}<input id="ht" type="number" min="1" max="999" inputmode="numeric" value="${d.target}"></label><label class="fl">${T('Единица')}<input id="hu" type="text" maxlength="10" value="${esc(d.unit)}"></label></div>` : ''}
@@ -790,6 +795,7 @@
           if (t.dataset.wd != null) { sync(); const i = +t.dataset.wd, p = d.days.indexOf(i); if (p >= 0) d.days.splice(p, 1); else d.days.push(i); t.classList.toggle('on'); t.setAttribute('aria-pressed', p < 0); R.anim(t, [{ transform: 'scale(.9)' }, { transform: 'scale(1)' }], { sp: 'bouncy', fill: 'none' }); R.haptic(8); return; }
           if (t.dataset.ic) { sync(); d.icon = t.dataset.ic; return redo(); }
           if (t.dataset.hu) { sync(); d.hue = +t.dataset.hu; return redo(); }
+          if (t.dataset.x === 'tpl') { a.close(); setTimeout(() => openTemplates({}), 340); return; }
           if (t.dataset.x === 'save') {
             sync();
             const shake = (el) => R.anim(el, [{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { dur: 260, fill: 'none' });
@@ -1045,6 +1051,200 @@
     });
   }
 
+
+  /* ================= шаблоны привычек ================= */
+  function tplSub(t) {
+    if (t.type === 'avoid') return T('Воздержание');
+    if (t.type === 'count') return `${t.target} ${T(t.unit)} ${T('в день')}`;
+    if (t.days) return t.days.map((i) => R.wd(i)).join(' · ');
+    if (t.perWeek && t.perWeek < 7) return `${t.perWeek} ${T('раз в неделю')}`;
+    return T('Каждый день');
+  }
+
+  function openTemplates(o = {}) {
+    const sel = new Set();
+    const has = (t) => S().habits.some((h) => !h.archived && (h.tpl === t.k || h.name.trim().toLowerCase() === T(t.name).toLowerCase()));
+    let added = false;
+    const card = (t) => {
+      const on = has(t);
+      return `<button type="button" class="tpl" style="--h:${t.hue}" data-t="${t.k}" aria-pressed="false" ${on ? 'disabled' : ''}><span class="ti">${ic(t.icon, 22)}</span><b>${esc(T(t.name))}</b><small>${on ? T('Уже добавлено') : esc(tplSub(t))}</small><i class="tk" aria-hidden="true">${ic('check', 14, 3)}</i></button>`;
+    };
+    openSheet({
+      full: true,
+      html: `<div class="dhead"><span></span><h2>${T('Выберите привычки')}</h2><button type="button" class="rbtn close" data-d="close" aria-label="${T('Закрыть')}">${ic('x', 20)}</button></div>
+        <p class="dsub center">${o.onboard ? T('Отметьте то, что хотите начать. Всё можно изменить позже.') : T('Готовые привычки: отметьте нужные')}</p>
+        <div class="tplgrid">${R.TEMPLATES.map(card).join('')}</div>
+        <div class="tplfoot"><button type="button" class="btn primary wide" data-t-add disabled>${T('Выберите привычки')}</button>
+        ${o.onboard ? `<div class="tplalt"><button type="button" class="chip ghost" data-t-demo>${T('Посмотреть демо')}</button><button type="button" class="chip ghost" data-t-skip>${T('Начать с нуля')}</button></div>` : ''}</div>`,
+      onMount: (a) => {
+        R.stagger($$('.tpl', a.body), { step: 28, from: 14, max: 14 });
+        const add = $('[data-t-add]', a.body);
+        const upd = () => { add.disabled = !sel.size; add.textContent = sel.size ? T('Добавить выбранные ({n})', { n: sel.size }) : T('Выберите привычки'); };
+        a.body.addEventListener('click', (e) => {
+          const b = e.target.closest('button'); if (!b) return;
+          if (b.dataset.d === 'close') return a.close();
+          if (b.dataset.t) {
+            const k = b.dataset.t, on = !sel.has(k);
+            if (on) sel.add(k); else sel.delete(k);
+            b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+            R.anim(b, [{ transform: 'scale(.94)' }, { transform: 'scale(1)' }], { sp: 'bouncy', fill: 'none' }); R.haptic(8); upd(); return;
+          }
+          if (b.hasAttribute('data-t-add') && sel.size) {
+            const made = R.addFromTemplates([...sel]);
+            if (made.some((h) => h.auto === 'journal')) new Set(S().entries.map((x) => R.dkey(new Date(x.ts)))).forEach((k) => R.syncJournalHabits(k));
+            R.save(); R.haptic([14, 40, 18]); added = true; a.close();
+            setTimeout(() => { cur = 'habits'; setNav(true); render(); done(T('Добавлено: {n}', { n: made.length })); }, 320);
+            return;
+          }
+          if (b.hasAttribute('data-t-demo')) { R.replaceState(R.seedDemo()); added = true; a.close(); setTimeout(() => { cur = 'habits'; setNav(true); render(); }, 320); return; }
+          if (b.hasAttribute('data-t-skip')) a.close();
+        });
+        a.onClose = () => { if (S().settings.onboard) { S().settings.onboard = false; R.save(); } if (!added) render({ quiet: true }); };
+      }
+    });
+  }
+
+  /* ================= «Ваш год в привычках» ================= */
+  function openYear(year0) {
+    let year = year0 || R.today().getFullYear(), Y, slides = [], i = 0;
+    const mn = (m) => cap(R.fmt(new Date(2000, m, 1), { month: 'long' }));
+    const ms = (m) => R.fmt(new Date(2000, m, 1), { month: 'narrow' }).toUpperCase();
+    const dm = (d) => R.fmt(d, { day: 'numeric', month: 'long' });
+    const bars = (arr, lab) => { const mx = Math.max(0.0001, ...arr.map((v) => v || 0)); return `<div class="mbars sa">${arr.map((v, k) => `<div class="mb"><i style="--w:${Math.round(((v || 0) / mx) * 100)}%;--d:${k * 40}ms"></i><span>${lab(k)}</span></div>`).join('')}</div>`; };
+    const sl = (hue, inner) => ({ hue, html: `<div class="slide" style="--sh:${hue}">${inner}</div>` });
+    const num = (n, c) => `<div class="sl-big sa"${c ? ` style="color:${c}"` : ''}><span data-c="${n}">${n}</span></div>`;
+
+    const build = () => {
+      Y = R.yearReview(year); slides = [];
+      if (!Y || Y.empty) {
+        slides.push(sl(350, `<div class="sl-ico sa">${ic('spark', 34)}</div><h2 class="sl-title sa">${T('Пока нет данных за {y}', { y: year })}</h2><p class="sl-sub sa">${T('Отмечайте привычки — и итоги появятся здесь.')}</p>${yearChips()}`));
+        return;
+      }
+      const yrs = yearChips();
+      slides.push(sl(350, `<p class="sl-eyebrow sa">${T('Ваш год в привычках')}</p><div class="sl-year sa">${year}</div>${num(Y.total)}<p class="sl-sub sa">${R.pl(Y.total, ['отметка за год', 'отметки за год', 'отметок за год'], ['check-in this year', 'check-ins this year'])}</p>${yrs}`));
+      slides.push(sl(150, `<p class="sl-eyebrow sa">${T('В ритме')}</p>${num(Y.activeDays)}<h2 class="sl-title sa">${T('активных дней из {n}', { n: Y.days })}</h2><div class="yheat sa">${R.yearGrid(Y.scores, Y.s.getFullYear() === year ? new Date(year, 0, 1) : Y.s)}</div>
+        <ul class="sl-list sa"><li>${ic('check', 16)}${T('Идеальных дней')}: <b>${Y.perfect}</b></li>${Y.busiestMonth != null ? `<li>${ic('flame', 16)}${T('Самый активный месяц')}: <b>${mn(Y.busiestMonth)}</b></li>` : ''}</ul>${bars(Y.perMonth, ms)}`));
+      if (Y.top) {
+        const t = Y.top;
+        slides.push(sl(t.h.hue, `<p class="sl-eyebrow sa">${T('Любимая привычка')}</p><div class="sl-ico sa">${ic(t.h.icon, 34)}</div><h2 class="sl-title sa">${esc(T(t.h.name))}</h2>${num(t.n)}<p class="sl-sub sa">${T('отметок')}${t.rate != null ? ` · ${T('выполнено {p}% плана', { p: Math.round(t.rate * 100) })}` : ''}</p>
+          ${Y.runners.length ? `<ul class="sl-list sa">${Y.runners.map((r) => `<li><span class="dot" style="background:hsl(${r.h.hue} 85% 60%)"></span>${esc(T(r.h.name))}: <b>${r.n}</b></li>`).join('')}</ul>` : ''}`));
+      }
+      if (Y.bestStreak && Y.bestStreak.n >= 2) {
+        const b = Y.bestStreak;
+        slides.push(sl(b.h.hue, `<p class="sl-eyebrow sa">${T('Лучшая серия года')}</p><div class="sl-ico sa">${ic('flame', 34)}</div>${num(b.n)}<p class="sl-sub sa">${dayWord(b.n)} ${T('подряд')}</p><h2 class="sl-title sa">${esc(T(b.h.name))}</h2><p class="sl-sub sa">${dm(b.from)} – ${dm(b.to)}</p>`));
+      }
+      if (Y.bestWd != null) {
+        slides.push(sl(215, `<p class="sl-eyebrow sa">${T('Ваш ритм')}</p><h2 class="sl-title sa big">${cap(R.fmt(new Date(2024, 0, 1 + Y.bestWd), { weekday: 'long' }))}</h2><p class="sl-sub sa">${T('самый продуктивный день недели')}</p>${bars(Y.perWd, (k) => R.wd(k))}
+          ${Y.peakHour != null ? `<p class="sl-sub sa">${T('Чаще всего вы отмечаете привычки около {h}', { h: String(Y.peakHour).padStart(2, '0') + ':00' })}</p>` : ''}`));
+      }
+      if (Y.mood.n) {
+        const m = Y.mood;
+        slides.push(sl(48, `<p class="sl-eyebrow sa">${T('Настроение')}</p>${num(R.num1(m.avg).replace(',', '.'), R.moodColor(m.avg)).replace(/data-c="[^"]*"/, '')}<p class="sl-sub sa">${T('средняя оценка')} · ${T('Записей')}: ${m.n}</p>${bars(m.perMonth, ms)}
+          <ul class="sl-list sa">${m.bestMonth != null ? `<li>${ic('sun', 16)}${T('Лучший месяц')}: <b>${mn(m.bestMonth)}</b></li>` : ''}</ul>${m.tags.length ? `<div class="sl-tags sa">${m.tags.map((x) => `<span>${esc(T(x))}</span>`).join('')}</div>` : ''}`));
+      }
+      if (Y.ach.length || Y.goals) {
+        slides.push(sl(290, `<p class="sl-eyebrow sa">${T('Награды года')}</p>${Y.ach.length ? `${num(Y.ach.length)}<p class="sl-sub sa">${T('достижений открыто')}</p><div class="sl-ach sa">${Y.ach.slice(0, 8).map((x) => `<span title="${esc(T(x.title))}">${ic(x.icon, 22)}</span>`).join('')}</div>` : ''}${Y.goals ? `<ul class="sl-list sa"><li>${ic('target', 16)}${T('Целей достигнуто')}: <b>${Y.goals}</b></li></ul>` : ''}`));
+      }
+      slides.push(sl(350, `<p class="sl-eyebrow sa">${T('Итог года')}</p><h2 class="sl-title sa">${T('Мой {y} в привычках', { y: year })}</h2><div class="yheat sa">${R.yearGrid(Y.scores, new Date(year, 0, 1))}</div>
+        <div class="sl-stats sa"><div><b>${Y.total}</b><small>${T('отметок')}</small></div><div><b>${Y.activeDays}</b><small>${T('активных дней')}</small></div><div><b>${Y.bestStreak ? Y.bestStreak.n : Y.perfect}</b><small>${Y.bestStreak ? T('лучшая серия') : T('идеальных дней')}</small></div></div>
+        <button type="button" class="btn primary wide sa" data-a="save">${ic('image', 18)}${T('Сохранить картинку')}</button>`));
+    };
+    function yearChips() {
+      const ys = R.yearsAvailable();
+      return ys.length > 1 ? `<div class="sl-years sa">${ys.map((y) => `<button type="button" class="chip ${y === year ? 'on' : ''}" data-y="${y}">${y}</button>`).join('')}</div>` : '';
+    }
+
+    S().reviews['y' + year] = Object.assign(S().reviews['y' + year] || {}, { seen: true }); R.save();
+    build();
+    openSheet({
+      full: true,
+      html: `<div class="story"><div class="sbars" aria-hidden="true"></div><button type="button" class="rbtn close sx" data-a="close" aria-label="${T('Закрыть')}">${ic('x', 20)}</button><div class="sstage" aria-live="polite"></div>
+        <button type="button" class="snav prev" data-a="prev" aria-label="${T('Назад')}">${ic('chevL', 22)}</button><button type="button" class="snav next" data-a="next" aria-label="${T('Далее')}">${ic('chevR', 22)}</button></div>`,
+      onMount: (a) => {
+        const root = $('.story', a.body), stage = $('.sstage', root), pb = $('.sbars', root);
+        const show = (n, dir = 1) => {
+          i = Math.max(0, Math.min(slides.length - 1, n));
+          root.style.setProperty('--sh', slides[i].hue);
+          stage.innerHTML = slides[i].html;
+          pb.innerHTML = slides.map((_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('');
+          $('.prev', root).disabled = i === 0; $('.next', root).disabled = i === slides.length - 1;
+          const sd = $('.slide', stage);
+          R.anim(sd, [{ opacity: 0, transform: `translateX(${dir * 36}px)` }, { opacity: 1, transform: 'translateX(0)' }], { sp: 'soft' });
+          R.stagger($$('.sa', stage), { step: 70, from: 16, max: 9 });
+          $$('[data-c]', stage).forEach((el) => R.countUp(el, +el.dataset.c, undefined, 1100));
+          requestAnimationFrame(() => sd.classList.add('go'));
+        };
+        show(0);
+        const key = (e) => { if (e.key === 'ArrowRight') show(i + 1, 1); else if (e.key === 'ArrowLeft') show(i - 1, -1); };
+        document.addEventListener('keydown', key);
+        let x0 = null;
+        stage.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+        stage.addEventListener('pointerup', (e) => { if (x0 == null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1); });
+        root.addEventListener('click', (e) => {
+          const b = e.target.closest('button'); if (!b) return;
+          if (b.dataset.y) { year = +b.dataset.y; S().reviews['y' + year] = Object.assign(S().reviews['y' + year] || {}, { seen: true }); R.save(); build(); show(0, 1); return; }
+          const act = b.dataset.a;
+          if (act === 'close') a.close();
+          else if (act === 'next') show(i + 1, 1);
+          else if (act === 'prev') show(i - 1, -1);
+          else if (act === 'save') shareYear(Y, year, b);
+        });
+        a.onClose = () => { document.removeEventListener('keydown', key); render({ quiet: true }); };
+      }
+    });
+  }
+
+  /* картинка 1080×1350 для сохранения / отправки */
+  function shareYear(Y, year, btn) {
+    const W = 1080, H = 1350, c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d'), light = typeof R.light === 'function' ? R.light() : !!R.light;
+    const css = getComputedStyle(document.documentElement);
+    const tx = css.getPropertyValue('--text').trim() || '#fff', mu = css.getPropertyValue('--muted').trim() || '#999', ac = css.getPropertyValue('--accent').trim() || '#ff4d6d';
+    const bg = g.createLinearGradient(0, 0, W, H);
+    if (light) { bg.addColorStop(0, '#fff1f4'); bg.addColorStop(1, '#eef0ff'); } else { bg.addColorStop(0, '#2a0f1a'); bg.addColorStop(1, '#0a0a12'); }
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    const ff = '-apple-system, "SF Pro Display", "Segoe UI", Roboto, sans-serif';
+    g.textBaseline = 'alphabetic';
+    g.fillStyle = mu; g.font = `600 36px ${ff}`; g.fillText(T('Ваш год в привычках').toUpperCase(), 80, 140);
+    g.fillStyle = tx; g.font = `800 200px ${ff}`; g.fillText(String(year), 72, 340);
+    g.fillStyle = ac; g.font = `800 150px ${ff}`; g.fillText(String(Y.total), 80, 540);
+    g.fillStyle = mu; g.font = `500 38px ${ff}`; g.fillText(T('отметок'), 84, 595);
+    /* тепловая карта года */
+    const cols = 53, gap = 4, cs = Math.floor((W - 160 - gap * (cols - 1)) / cols), ox = 80, oy = 680;
+    const off = (new Date(year, 0, 1).getDay() + 6) % 7, hue = 350;
+    const lvl = [light ? 'rgba(0,0,0,.07)' : 'rgba(255,255,255,.08)', `hsl(${hue} 60% ${light ? 84 : 27}%)`, `hsl(${hue} 70% ${light ? 72 : 40}%)`, `hsl(${hue} 80% ${light ? 58 : 54}%)`, `hsl(${hue} 92% ${light ? 46 : 72}%)`];
+    Y.scores.forEach((x, n) => {
+      const p = n + off, col = Math.floor(p / 7), row = p % 7;
+      const l = x.sc == null || x.sc === 0 ? 0 : x.sc < 0.34 ? 1 : x.sc < 0.67 ? 2 : x.sc < 1 ? 3 : 4;
+      g.fillStyle = lvl[l]; g.globalAlpha = x.fut ? 0.35 : 1;
+      g.beginPath(); (g.roundRect || g.rect).call(g, ox + col * (cs + gap), oy + row * (cs + gap), cs, cs, 4); g.fill();
+    });
+    g.globalAlpha = 1;
+    const stats = [[Y.activeDays, T('активных дней')], [Y.perfect, T('идеальных дней')], [Y.bestStreak ? Y.bestStreak.n : 0, T('лучшая серия')]];
+    stats.forEach(([v, l], k) => {
+      const x = 80 + k * 320;
+      g.fillStyle = tx; g.font = `800 96px ${ff}`; g.fillText(String(v), x, 1070);
+      g.fillStyle = mu; g.font = `500 32px ${ff}`; g.fillText(l, x, 1118);
+    });
+    if (Y.top) { g.fillStyle = mu; g.font = `500 34px ${ff}`; g.fillText(`${T('Любимая привычка')}: ${T(Y.top.h.name)}`, 80, 1210); }
+    g.fillStyle = ac; g.font = `800 44px ${ff}`; g.fillText('Ritual', 80, 1290);
+    btn.disabled = true;
+    c.toBlob(async (blob) => {
+      btn.disabled = false;
+      if (!blob) return;
+      const file = new File([blob], `ritual-${year}.png`, { type: 'image/png' });
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: T('Мой {y} в привычках', { y: year }) }); return; }
+      } catch (e) { if (e && e.name === 'AbortError') return; }
+      const u = URL.createObjectURL(blob), l = document.createElement('a');
+      l.href = u; l.download = file.name; document.body.appendChild(l); l.click(); l.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 4000);
+      toast(T('Картинка сохранена'));
+    }, 'image/png');
+  }
+  R.shareYear = shareYear;
+
   /* ================= старт ================= */
   function boot() {
     buildNav();
@@ -1056,6 +1256,7 @@
     setInterval(checkReminder, 30000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkReminder(); if (!stack.length && cur === 'habits') render({ quiet: true }); } });
     checkReminder();
+    if (S().settings.onboard && !S().habits.length) setTimeout(() => openTemplates({ onboard: true }), 650);
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
