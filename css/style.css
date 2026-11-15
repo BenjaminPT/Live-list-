@@ -7,7 +7,7 @@
   --tile-a: #1d1d20; --tile-b: #121214; --tile-dim: #000;
   --ca: 20%; --cb: 10%; --cc: 6%; --cd: 22%; --fl: 45%; --ha: 15%; --hb: 8%;
   --k1: 27%; --k2: 40%; --k3: 54%; --k4: 72%; --il: 70%; --bigl: 64%;
-  --sb: env(safe-area-inset-bottom, 0px); --st: env(safe-area-inset-top, 0px); --col: 560px; --nb: calc(8px + var(--sb) * .55);
+  --sb: env(safe-area-inset-bottom, 0px); --st: env(safe-area-inset-top, 0px); --col: 560px; --vgap: 0px; --nb: calc(max(8px, calc(var(--sb) - 18px)) - var(--vgap));
   --spring: cubic-bezier(.2, .9, .3, 1); --spring-d: 450ms; --pop: cubic-bezier(.3, 1.35, .5, 1); --pop-d: 450ms;
   font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }

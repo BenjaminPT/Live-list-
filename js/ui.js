@@ -1263,9 +1263,24 @@
       const t = R.tl().add(nav, [{ opacity: 0, transform: 'translate(-50%, 36px) scale(.96)' }, { opacity: 1, transform: 'translate(-50%, 0) scale(1)' }], { sp: 'soft' });
       if (!fab.classList.contains('hide')) t.add(fab, [{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'scale(1)' }], { at: '<140', sp: 'bouncy' });
     };
+    /* iOS PWA: если видимая область короче экрана, fixed-элементы «висят» выше низа — измеряем и компенсируем */
+    const fit = () => {
+      const standalone = (navigator.standalone === true) || (matchMedia && matchMedia('(display-mode: standalone)').matches);
+      let gap = 0;
+      if (standalone && innerHeight > innerWidth) {
+        const pr = document.createElement('i');
+        pr.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:0;pointer-events:none';
+        document.body.appendChild(pr);
+        gap = Math.round(screen.height - pr.getBoundingClientRect().bottom);
+        pr.remove();
+      }
+      document.documentElement.style.setProperty('--vgap', (gap > 4 && gap < 140 ? gap : 0) + 'px');
+    };
+    fit();
+    addEventListener('resize', fit); addEventListener('orientationchange', () => setTimeout(fit, 300));
     let done = false;
     const go = () => { if (done) return; done = true; requestAnimationFrame(() => requestAnimationFrame(reveal)); };
-    const ready = () => setTimeout(go, 140);
+    const ready = () => setTimeout(() => { fit(); go(); }, 140);
     if (document.readyState === 'complete') ready(); else window.addEventListener('load', ready, { once: true });
     setTimeout(go, 1200); /* страховка */
   }
@@ -1283,7 +1298,13 @@
     checkReminder();
     settleChrome();
     if (S().settings.onboard && !S().habits.length) setTimeout(() => openTemplates({ onboard: true }), 650);
-    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      const had = !!navigator.serviceWorker.controller;
+      let reloaded = false;
+      /* новая версия подхватывается сразу, а не со второго запуска */
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && !reloaded && !stack.length) { reloaded = true; location.reload(); } });
+      navigator.serviceWorker.register('sw.js').then((r) => { r.update && r.update(); }).catch(() => {});
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
