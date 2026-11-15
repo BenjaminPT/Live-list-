@@ -165,7 +165,7 @@
     const rest = !R.isDue(h, tk) && !isDone;
     let label;
     if (h.type === 'avoid') label = l.slip ? T('Был срыв') : T('Держусь');
-    else if (h.type === 'count') label = isDone ? T('Готово') : `+1 · ${l.v || 0}/${h.target}`;
+    else if (h.type === 'count') label = `+1 · ${l.v || 0}/${h.target}`;
     else label = isDone ? T('Выполнено') : rest ? T('Выходной') : T('Отметить');
     const cls = h.type === 'avoid' ? (l.slip ? 'slip' : 'done') : isDone ? 'done' : '';
     const exc = R.isExcused(h, tk) && !isDone && !rest;
@@ -484,6 +484,7 @@
           const restore = () => { if (Object.keys(snap).length) R.state.logs[h.id][k] = snap; else delete R.state.logs[h.id][k]; R.save(); refreshCard(h, true); };
           if (h.type === 'avoid' && slipNow) toast(T('Срыв отмечен. Серия начнётся заново'), () => { R.setLog(h, k, { slip: null, v: null }); refreshCard(h, false); });
           else if (before && !after) toast(T('Отметка снята'), restore);
+          else if (h.type === 'count' && before) { const nv = (R.getLog(h, k) || {}).v; toast(T('Сверх цели: {v} из {t}', { v: nv, t: h.target }), restore); }
           else done();
           return;
         }

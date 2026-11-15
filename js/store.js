@@ -239,7 +239,7 @@
     const tm = now.getHours() * 60 + now.getMinutes();
     const l = R.getLog(h, k) || {};
     if (h.type === 'avoid') R.setLog(h, k, l.slip ? { slip: null, v: null } : { slip: true, v: 0 });
-    else if (h.type === 'count') R.setLog(h, k, l.v >= h.target ? { v: null, t: null } : { v: (l.v || 0) + 1, t: tm, miss: null });
+    else if (h.type === 'count') R.setLog(h, k, { v: (l.v || 0) + 1, t: l.t != null && l.v >= h.target ? l.t : tm, miss: null });
     else R.setLog(h, k, l.v ? { v: null, t: null, auto: null } : { v: 1, t: tm, miss: null, auto: null });
   };
 

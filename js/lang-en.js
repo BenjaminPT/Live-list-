@@ -311,6 +311,7 @@
     'серия считается в неделях': 'streak counted in weeks',
     'среднее время отметки': 'average check-in time',
     'стак.': 'glasses',
+    'Сверх цели: {v} из {t}': 'Over the goal: {v} of {t}',
     'Удалить тег': 'Remove tag',
     'Свои теги сохраняются и всегда будут под рукой.': 'Your own tags are saved and always at hand.',
     'Утренняя зарядка': 'Morning workout',
