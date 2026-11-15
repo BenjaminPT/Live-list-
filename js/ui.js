@@ -37,9 +37,9 @@
     stack.push(api);
     history.pushState({ r: stack.length }, '');
     document.body.classList.add('sheet-open');
-    R.anim(back, [{ opacity: 0 }, { opacity: 1 }], { dur: 320, ease: 'ease-out' });
-    R.anim(sheet, [{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }], { sp: 'sheet' });
-    if (full) R.anim($('#view'), [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.95)', opacity: 0.45 }], { dur: 420, ease: 'cubic-bezier(.22,.8,.3,1)', fill: 'forwards' });
+    const tl = R.tl().add(back, [{ opacity: 0 }, { opacity: 1 }], { dur: 380, ease: 'cubic-bezier(.22,.8,.3,1)' })
+      .add(sheet, [{ transform: 'translateY(100%)' }, { transform: 'translateY(0)' }], { at: '<', sp: 'sheet' });
+    if (full) tl.add($('#view'), [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.95)', opacity: 0.45 }], { at: '<', dur: 480, ease: 'cubic-bezier(.22,.8,.3,1)', fill: 'forwards' });
     bindDrag(api);
     onMount && onMount(api);
     if (focus) setTimeout(() => { const f = $(focus, sheet); f && f.focus({ preventScroll: true }); }, 380);
@@ -1015,8 +1015,10 @@
           root.innerHTML = html();
           $$('[data-c]', root).forEach((el) => R.countUp(el, +el.dataset.c, undefined, 1100));
           const rf = $('.bigring .rf', root);
-          if (rf && anim) { const to = rf.getAttribute('stroke-dasharray'), C = 2 * Math.PI * 54; R.anim(rf, [{ strokeDasharray: `0 ${C}` }, { strokeDasharray: to }], { dur: 1200, ease: 'cubic-bezier(.3,.7,.2,1)', delay: 120 }); }
-          if (anim) R.stagger($$('.tile,.dpanel,.rvhero', root), { step: 70, from: 14 });
+          if (anim) {
+            const t = R.tl().add($$('.rvhero,.tile,.dpanel', root), [{ opacity: 0, transform: 'translateY(14px) scale(.985)' }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { each: 70, sp: 'soft' });
+            if (rf) { const to = rf.getAttribute('stroke-dasharray'), C = 2 * Math.PI * 54; t.add(rf, [{ strokeDasharray: `0 ${C}` }, { strokeDasharray: to }], { at: 120, dur: 1300, ease: 'cubic-bezier(.3,.7,.2,1)' }); }
+          }
         };
         paint(true);
         root.addEventListener('click', (e) => {
@@ -1169,8 +1171,8 @@
           pb.innerHTML = slides.map((_, k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('');
           $('.prev', root).disabled = i === 0; $('.next', root).disabled = i === slides.length - 1;
           const sd = $('.slide', stage);
-          R.anim(sd, [{ opacity: 0, transform: `translateX(${dir * 36}px)` }, { opacity: 1, transform: 'translateX(0)' }], { sp: 'soft' });
-          R.stagger($$('.sa', stage), { step: 70, from: 16, max: 9 });
+          R.tl().add(sd, [{ opacity: 0, transform: `translateX(${dir * 44}px)` }, { opacity: 1, transform: 'translateX(0)' }], { sp: 'soft' })
+            .add($$('.sa', stage), [{ opacity: 0, transform: 'translateY(18px) scale(.98)' }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { at: '<90', each: 75, max: 9, sp: 'soft' });
           $$('[data-c]', stage).forEach((el) => R.countUp(el, +el.dataset.c, undefined, 1100));
           requestAnimationFrame(() => sd.classList.add('go'));
         };

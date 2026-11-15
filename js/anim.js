@@ -8,7 +8,7 @@
   const cache = {};
   const hasLinear = !!(window.CSS && CSS.supports && CSS.supports('animation-timing-function', 'linear(0, 1)'));
   /* [жёсткость, затухание, масса]: затухание близко к критическому — мягко и без «дрожи» */
-  R.SP = { snappy: [420, 38, 1], soft: [190, 27, 1], sheet: [165, 26, 1], bouncy: [250, 21, 1], gentle: [110, 21, 1] };
+  R.SP = { snappy: [360, 36, 1], soft: [150, 25, 1], sheet: [135, 24.5, 1], bouncy: [210, 21, 1], gentle: [95, 20, 1] };
 
   R.spring = (stiffness, damping, mass = 1) => {
     const key = [stiffness, damping, mass].join();
@@ -42,6 +42,8 @@
   root.setProperty('--pop', sb.easing);
   root.setProperty('--pop-d', Math.min(sb.duration, 520) + 'ms');
 
+  root.setProperty('--ease', 'cubic-bezier(.22,.8,.3,1)');
+
   const noop = () => ({ finished: Promise.resolve(), cancel() {}, onfinish: null });
 
   /* R.anim(el, keyframes, {sp, delay, dur, ease, fill}) */
@@ -52,15 +54,55 @@
     return el.animate(frames, { duration: dur || sp0.duration, easing: ease || (sp0 && sp0.easing) || 'ease-out', delay, fill });
   };
 
+  /* мини-таймлайн в духе GSAP (WAAPI, без зависимостей):
+     const t = R.tl({ defaults: { sp: 'soft' } });
+     t.add(el, frames, '<')            // одновременно с предыдущим
+      .add(els, frames, { at: '<.1', each: 60 })   // каскад, старт через 100 мс после начала предыдущего
+      .add(el2, frames, '+=80')       // через 80 мс после конца предыдущего
+      .label('x').add(el3, frames, 'x+=40');
+     Позиции: число (мс от начала), '<' / '<n' (от старта предыдущего), '>' / '+=n' / '-=n' (от конца), 'метка±n'. */
+  R.tl = (o = {}) => {
+    const def = o.defaults || {}, labels = {}, anims = [];
+    let lastStart = 0, lastEnd = 0;
+    const at = (pos) => {
+      if (pos == null || pos === '>') return lastEnd;
+      if (typeof pos === 'number') return pos;
+      let m;
+      if ((m = /^<(-?\d*\.?\d*)$/.exec(pos))) return lastStart + (+m[1] || 0);
+      if ((m = /^([+-])=(\d*\.?\d+)$/.exec(pos))) return lastEnd + (m[1] === '-' ? -1 : 1) * +m[2];
+      if ((m = /^([A-Za-z]\w*)(?:([+-])=(\d*\.?\d+))?$/.exec(pos)) && m[1] in labels) return labels[m[1]] + (m[2] ? (m[2] === '-' ? -1 : 1) * +m[3] : 0);
+      return lastEnd;
+    };
+    const api = {
+      label: (n, pos) => { labels[n] = at(pos); return api; },
+      add(els, frames, pos) {
+        const opt = typeof pos === 'object' && pos !== null ? pos : { at: pos };
+        const list = els && els.length != null && !els.nodeType ? [...els] : [els];
+        const base = at(opt.at), each = opt.each || 0, max = opt.max == null ? 12 : opt.max;
+        let end = base;
+        list.forEach((el, i) => {
+          const d = base + Math.min(i, max) * each;
+          const a = R.anim(el, frames, Object.assign({}, def, opt, { delay: d }));
+          anims.push(a);
+          const dur = a.effect ? a.effect.getComputedTiming().duration : 0;
+          end = Math.max(end, d + dur);
+        });
+        lastStart = base; lastEnd = end;
+        return api;
+      },
+      cancel: () => anims.forEach((a) => a.cancel && a.cancel()),
+      get duration() { return lastEnd; }
+    };
+    return api;
+  };
+
   /* каскадное появление: мягкий подъём + проявление */
   R.stagger = (els, o = {}) => {
-    const { step = 45, from = 16, max = 10, sp = 'soft' } = o;
-    els.forEach((el, i) =>
-      R.anim(el, [
-        { opacity: 0, transform: `translateY(${from}px) scale(.985)` },
-        { opacity: 1, transform: 'translateY(0) scale(1)' }
-      ], { sp, delay: Math.min(i, max) * step })
-    );
+    const { step = 55, from = 14, max = 10, sp = 'soft', at = 0 } = o;
+    R.tl().add(els, [
+      { opacity: 0, transform: `translateY(${from}px) scale(.985)` },
+      { opacity: 1, transform: 'translateY(0) scale(1)' }
+    ], { at, each: step, max, sp });
   };
 
   R.countUp = (el, to, fmt = (n) => String(Math.round(n)), ms = 1000) => {
@@ -69,7 +111,7 @@
     const t0 = performance.now();
     const step = (now) => {
       const p = Math.min(1, (now - t0) / ms);
-      el.textContent = fmt(to * (1 - Math.pow(1 - p, 4)));
+      el.textContent = fmt(to * (1 - Math.pow(1 - p, 5)));
       if (p < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);

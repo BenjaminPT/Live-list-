@@ -1,5 +1,5 @@
 /* Ritual — service worker: офлайн-кэш оболочки приложения */
-const VERSION = 'ritual-v3';
+const VERSION = 'ritual-v4';
 const SHELL = [
   './', 'index.html', 'manifest.json', 'css/style.css',
   'js/i18n.js', 'js/lang-en.js', 'js/icons.js', 'js/anim.js', 'js/store.js', 'js/charts.js', 'js/year.js', 'js/ui.js',
