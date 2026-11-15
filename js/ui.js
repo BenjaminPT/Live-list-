@@ -361,6 +361,18 @@
     const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     return { sup, ios, standalone, perm: sup ? Notification.permission : 'unsupported' };
   }
+  /* технические размеры окна — для подгонки раскладки на iPhone */
+  function diagText() {
+    const pr = document.createElement('i');
+    pr.style.cssText = 'position:fixed;left:0;top:0;width:0;height:env(safe-area-inset-bottom,0px);visibility:hidden';
+    document.body.appendChild(pr);
+    const sab = Math.round(pr.getBoundingClientRect().height);
+    pr.remove();
+    const vv = window.visualViewport ? Math.round(visualViewport.height) : '–';
+    const sa = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    return `screen ${screen.width}×${screen.height} · inner ${innerWidth}×${innerHeight} · visual ${vv} · safe-bottom ${sab} · standalone ${sa ? 'yes' : 'no'}`;
+  }
+
   function moreView() {
     const st = S().settings, arch = S().habits.filter((h) => h.archived);
     const ns = notifState();
@@ -387,7 +399,8 @@
         <input type="file" id="imp" accept="application/json,.json" hidden>
         <button type="button" class="btn danger wide" data-act="reset">${ic('trash', 18)}${T('Удалить все данные')}</button></section>
       ${arch.length ? `<section class="panel"><h3>${T('Архив')}</h3><ul class="plain">${arch.map((h) => `<li class="arch"><span class="cn2" style="--h:${h.hue}">${ic(h.icon, 16)}${esc(T(h.name))}</span><button type="button" class="chip" data-restore="${h.id}">${T('Вернуть')}</button></li>`).join('')}</ul></section>` : ''}
-      <p class="muted center sm foot">Ritual · ${T('офлайн-приложение')} · 2.0</p>`;
+      <p class="muted center sm foot">Ritual · ${T('офлайн-приложение')} · 2.1</p>
+      <p class="muted center sm" id="diag" style="opacity:.7">${diagText()}</p>`;
   }
 
   const VIEWS = { habits: habitsView, journal: journalView, analyze: analyzeView, more: moreView };
